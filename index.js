@@ -1,7 +1,7 @@
 const app = new PIXI.Application({
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: 0x1099bb,
+    transparent: true,
     position: 'absolute',
     resolution: window.devicePixelRatio || 1
 });
@@ -9,20 +9,27 @@ document.body.appendChild(app.view);
 
 const container = new PIXI.Container();
 app.stage.addChild(container);
-
 // Move container to the center
 container.x = app.screen.width / 2;
 container.y = app.screen.height / 2;
 
 //constants
-const IMG_MACHINE = "https://res.cloudinary.com/rmarcello/image/upload/v1431599260/slot-machine_fhrtsl.png";
+const IMG_MACHINE = "./src/try-this.png";
 const IMG_BUTTON = "./src/spin.idle.png";
 const BET_BUTTON = "./src/bet.png";
 const WINNER_IMAGE = "./src/winner.png";
 const SOUND = PIXI.sound.Sound.from('./src/win.mp3');
 
-const times = new PIXI.Text('x');
-const basicText = new PIXI.Text(1);
+//text data
+const bet = new PIXI.Text(`$`, {fill: '#ffffff'});
+const credits = new PIXI.Text(`Credits: $`, {fill: '#ffffff'});
+const win = new PIXI.Text(`Win: $`, {fill: '#ffffff'});
+
+//value
+const betValue = new PIXI.Text(`1`, {fill: '#ffffff'});
+const creditsValue = new PIXI.Text(`100`, {fill: '#ffffff'});
+const winValue = new PIXI.Text(`0`, {fill: '#ffffff'});
+
 
 let STATE_ZERO = 0;
 let STATE_INIT = 1;
@@ -32,7 +39,7 @@ let STATE_CHECK_WIN = 3;
 let SLOT_NUMBER = 5;
 let INITIAL_X = 0;
 let TILE_HEIGHT = 100;
-let TILE_WIDTH = TILE_HEIGHT;
+let TILE_WIDTH = 100;
 let N_CYCLE = 5;
 let TOT_TILES = 7;
 
@@ -48,49 +55,69 @@ let preChoosedPosition = [];
 
 //setup
 function setup() {
-    times.x = 280;
-    times.y = 350;
-    container.addChild(times);
+    //add credits
+    credits.x = 0;
+    credits.y = 350;
+    container.addChild(credits);
 
-    basicText.x = 295;
-    basicText.y = 350;
-    container.addChild(basicText);
+    //add credits value
+    creditsValue.x = 120;
+    creditsValue.y = 350;
+    container.addChild(creditsValue);
+
+    //add win
+    win.x = 270;
+    win.y = 350;
+    container.addChild(win);
+
+    //add win value
+    winValue.x = 350;
+    winValue.y = 350;
+    container.addChild(winValue);
+
+    //add bet
+    bet.x = 520;
+    bet.y = 350;
+    container.addChild(bet);
+
+    //add bet value
+    betValue.x = 540;
+    betValue.y = 350;
+    container.addChild(betValue);
 
     texture = PIXI.Texture.from(IMG_BUTTON);
     buttonSprite = new PIXI.Sprite(texture);
-    buttonSprite.x = 430;
+    buttonSprite.x = 480;
     buttonSprite.y = 400;
-    //Change the sprite's size
     buttonSprite.width = 100;
     buttonSprite.height = 100;
     container.addChild(buttonSprite);
 
     buttonSprite.interactive = true;
     buttonSprite.buttonMode = true;
-    buttonSprite.click = function (e) {
+    buttonSprite.click = function () {
         startAnimation();
     }
 
-    buttonSprite.touchstart = function (e) {
+    buttonSprite.touchstart = function () {
         startAnimation();
     }
 
     texture = PIXI.Texture.from(BET_BUTTON);
     buttonSprite = new PIXI.Sprite(texture);
-    buttonSprite.x = 30;
+    buttonSprite.x = 0;
     buttonSprite.y = 400;
-    //Change the sprite's size
     buttonSprite.width = 100;
     buttonSprite.height = 100;
     container.addChild(buttonSprite);
 
     buttonSprite.interactive = true;
     buttonSprite.buttonMode = true;
-    buttonSprite.click = function (e) {
+    buttonSprite.click = function () {
         changeBet();
     }
 
-    buttonSprite.touchstart = function (e) {
+    buttonSprite.touchstart = function () {
         changeBet();
     }
 
@@ -110,9 +137,8 @@ function setup() {
 }
 
 function changeBet() {
-    if(basicText.text <= 4) basicText.text++
-    else basicText.text = 0;
-
+    if(betValue.text <= 4) betValue.text++
+    else betValue.text = 1;
 }
 
 function winner() {
@@ -121,6 +147,8 @@ function winner() {
     winnerSprite.x = 80;
     winnerSprite.y = 500;
     container.addChild(winnerSprite);
+    winValue.text = parseInt(winValue.text) + parseInt(betValue.text);
+    creditsValue.text = parseInt(creditsValue.text) + (parseInt(betValue.text) * 2);
 }
 //
 let INC = [15, 20, 25, 30, 35];
@@ -128,7 +156,7 @@ let INC = [15, 20, 25, 30, 35];
 //functions draw
 function draw() {
     if(gameStatus === STATE_ZERO) {
-        gameStatus=STATE_INIT;
+        gameStatus = STATE_INIT;
     } else if(gameStatus === STATE_INIT) {
         gameStatus = STATE_CHECK_WIN;
     } else if(gameStatus === STATE_MOVING) {
@@ -160,7 +188,8 @@ function draw() {
 
 function startAnimation() {
     if(gameStatus === STATE_INIT || gameStatus === STATE_CHECK_WIN) {
-        container.children.length = 9;
+        container.children.length = 13;
+        creditsValue.text = parseInt(creditsValue.text) - parseInt(betValue.text);
         preChoosedPosition = getRandomPositions();
         for(let i = 0; i < SLOT_NUMBER; i++) {
             slotSprite[i].tilePosition.y = (-preChoosedPosition[i] * TILE_HEIGHT) + 10;
